@@ -1,0 +1,361 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Anura hub - Blox Fruits U26","DarkTheme")
+
+-- Tab chính
+local Tab = Window:NewTab("Main")
+local Section = Tab:NewSection("Auto Farm")
+
+-- Auto Farm tối ưu cho bản cập nhật 26
+Section:NewToggle("Auto Farm","Tự động farm quái", function(state)
+    if state then
+        print("Auto Farm ON")
+        _G.AutoFarm = true
+        
+        local function getClosestEnemy()
+            local closest = nil
+            local maxDistance = math.huge
+            local playerPos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+            
+            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                    local distance = (playerPos - v.HumanoidRootPart.Position).magnitude
+                    if distance < maxDistance then
+                        maxDistance = distance
+                        closest = v
+                    end
+                end
+            end
+            
+            return closest
+        end
+        
+        while _G.AutoFarm do
+            wait()
+            
+            if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") or game.Players.LocalPlayer.Character.Humanoid.Health <= 0 then
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetSpawnPoint")
+                wait(5)
+                continue
+            end
+            
+            local target = getClosestEnemy()
+            
+            if target then
+                local humanoidRootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+                humanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+                
+                game:GetService("VirtualUser"):CaptureController()
+                game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), nil)
+                
+                if target.Humanoid.Health <= 0 then
+                    wait(0.5)
+                end
+            else
+                wait(1)
+            end
+        end
+    else
+        print("Auto Farm OFF")
+        _G.AutoFarm = false
+        game:GetService("VirtualUser"):Button1Up(Vector2.new(0,0), nil)
+    end
+end)
+
+-- Auto Collect Fruit cải tiến
+Section:NewToggle("Auto Collect Fruits", "Tự động thu thập trái ác quỷ", function(state)
+    if state then
+        _G.CollectFruits = true
+        print("Fruit Collector ON")
+        
+        local function getPriority(fruitName)
+            if string.find(fruitName, "Leopard") then return 5
+            elseif string.find(fruitName, "Dragon") then return 4
+            elseif string.find(fruitName, "Venom") or string.find(fruitName, "Dough") then return 3
+            elseif string.find(fruitName, "Shadow") or string.find(fruitName, "Control") then return 2
+            else return 1 end
+        end
+        
+        while _G.CollectFruits and wait(0.3) do
+            if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                wait(1)
+                continue
+            end
+            
+            local playerPos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+            local bestFruit = nil
+            local highestPriority = 0
+            local shortestDistance = math.huge
+            
+            for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                if v:IsA("Tool") and string.find(v.Name, "Fruit") and v:FindFirstChild("Handle") then
+                    local fruitPos = v.Handle.Position
+                    local distance = (playerPos - fruitPos).magnitude
+                    local priority = getPriority(v.Name)
+                    
+                    if distance < 500 then
+                        if priority > highestPriority or 
+                          (priority == highestPriority and distance < shortestDistance) then
+                            highestPriority = priority
+                            shortestDistance = distance
+                            bestFruit = v
+                        end
+                    end
+                end
+            end
+            
+            if bestFruit then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = bestFruit.Handle.CFrame
+                wait(0.5)
+            end
+        end
+    else
+        _G.CollectFruits = false
+        print("Fruit Collector OFF")
+    end
+end)
+
+-- ESP System nâng cao cho bản cập nhật 26
+Section:NewToggle("ESP System", "Hiển thị mục tiêu và vật phẩm quan trọng", function(state)
+    if state then
+        _G.ESPEnabled = true
+        print("ESP System ON")
+        
+        -- Cấu hình màu sắc
+        local ESPColors = {
+            Enemies = Color3.fromRGB(255, 50, 50),      -- Đỏ cho quái thường
+            Fruits = Color3.fromRGB(50, 255, 50),       -- Xanh lá cho trái ác quỷ
+            Chests = Color3.fromRGB(255, 255, 0),       -- Vàng cho rương
+            Players = Color3.fromRGB(0, 150, 255),      -- Xanh dương cho người chơi khác
+            Bosses = Color3.fromRGB(255, 0, 255)        -- Tím cho boss
+        }
+        
+        -- Tạo nhãn ESP
+        local function createESPLabel(obj, text, color)
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "ESPLabel"
+            billboard.Adornee = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Handle") or obj.PrimaryPart or obj
+            billboard.Size = UDim2.new(0, 100, 0, 40)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = obj
+            
+            local label = Instance.new("TextLabel")
+            label.Name = "Label"
+            label.Size = UDim2.new(1, 0, 0, 20)
+            label.Position = UDim2.new(0, 0, 0, 0)
+            label.BackgroundTransparency = 1
+            label.TextStrokeTransparency = 0
+            label.TextStrokeColor3 = Color3.new(0, 0, 0)
+            label.TextColor3 = color
+            label.Text = text
+            label.TextScaled = false
+            label.Font = Enum.Font.SourceSansBold
+            label.Parent = billboard
+            
+            if obj:FindFirstChild("Humanoid") then
+                local healthLabel = Instance.new("TextLabel")
+                healthLabel.Name = "HealthLabel"
+                healthLabel.Size = UDim2.new(1, 0, 0, 20)
+                healthLabel.Position = UDim2.new(0, 0, 0, 20)
+                healthLabel.BackgroundTransparency = 1
+                healthLabel.TextStrokeTransparency = 0
+                healthLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                healthLabel.TextColor3 = color
+                healthLabel.Text = "HP: "..tostring(math.floor(obj.Humanoid.Health))
+                healthLabel.TextScaled = false
+                healthLabel.Font = Enum.Font.SourceSansBold
+                healthLabel.Parent = billboard
+                
+                obj.Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+                    healthLabel.Text = "HP: "..tostring(math.floor(obj.Humanoid.Health))
+                end)
+            end
+        end
+        
+        -- Tạo highlight ESP
+        local function createESP(obj, espType)
+            if not obj or not obj.Parent then return end
+            
+            -- Bỏ qua nếu đã có ESP
+            if obj:FindFirstChild("Highlight") or obj:FindFirstChild("ESPLabel") then 
+                return 
+            end
+            
+            -- Tạo highlight
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "Highlight"
+            highlight.FillColor = ESPColors[espType]
+            highlight.FillTransparency = 0.3
+            highlight.OutlineColor = ESPColors[espType]
+            highlight.OutlineTransparency = 0
+            highlight.Parent = obj
+            
+            -- Tạo nhãn tùy loại
+            if espType == "Enemies" then
+                createESPLabel(obj, obj.Name, ESPColors.Enemies)
+            elseif espType == "Fruits" then
+                createESPLabel(obj, obj.Name, ESPColors.Fruits)
+            elseif espType == "Chests" then
+                createESPLabel(obj, "Rương", ESPColors.Chests)
+            elseif espType == "Bosses" then
+                createESPLabel(obj, obj.Name.." (BOSS)", ESPColors.Bosses)
+            end
+        end
+        
+        -- Xóa ESP hiện có
+        local function clearESP()
+            for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+                if v.Name == "Highlight" or v.Name == "ESPLabel" then
+                    v:Destroy()
+                end
+            end
+        end
+        
+        -- Thiết lập ESP ban đầu
+        clearESP()
+        
+        -- Phát hiện và highlight vật thể hiện có
+        for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+            if v:FindFirstChild("Humanoid") then
+                if string.find(v.Name:lower(), "boss") then
+                    createESP(v, "Bosses")
+                else
+                    createESP(v, "Enemies")
+                end
+            end
+        end
+        
+        for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+            if v:IsA("Tool") and string.find(v.Name, "Fruit") then
+                createESP(v, "Fruits")
+            elseif v.Name:find("Chest") or v.Name:find("Chest") then
+                createESP(v, "Chests")
+            end
+        end
+        
+        -- Tự động làm mới ESP cho vật thể mới
+        local enemyAddedConn = game:GetService("Workspace").Enemies.ChildAdded:Connect(function(child)
+            if child:FindFirstChild("Humanoid") then
+                if string.find(child.Name:lower(), "boss") then
+                    createESP(child, "Bosses")
+                else
+                    createESP(child, "Enemies")
+                end
+            end
+        end)
+        
+        local fruitAddedConn = game:GetService("Workspace").ChildAdded:Connect(function(child)
+            if child:IsA("Tool") and string.find(child.Name, "Fruit") then
+                createESP(child, "Fruits")
+            elseif child.Name:find("Chest") or child.Name:find("Chest") then
+                createESP(child, "Chests")
+            end
+        end)
+        
+        -- Vòng lặp chính của ESP
+        while _G.ESPEnabled do
+            wait(5)
+            
+            -- Cập nhật các thành phần ESP hiện có
+            for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+                if v.Name == "ESPLabel" and v:FindFirstChild("HealthLabel") then
+                    local humanoid = v.Parent:FindFirstChild("Humanoid")
+                    if humanoid then
+                        v.HealthLabel.Text = "HP: "..tostring(math.floor(humanoid.Health))
+                    end
+                end
+            end
+        end
+        
+        -- Dọn dẹp khi tắt
+        enemyAddedConn:Disconnect()
+        fruitAddedConn:Disconnect()
+        clearESP()
+    else
+        _G.ESPEnabled = false
+        print("ESP System OFF")
+    end
+end)
+
+-- Tab Player
+local Tab2 = Window:NewTab("Player")
+local Section2 = Tab2:NewSection("Player Mods")
+
+Section2:NewSlider("WalkSpeed","Tốc độ di chuyển", 500, 16, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+end)
+
+Section2:NewButton("Infinite Yield","Tải Infinite Yield", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end)
+
+Section2:NewButton("God Mode","Chế độ bất tử", function()
+    local player = game.Players.LocalPlayer
+    player.Character.Humanoid.MaxHealth = math.huge
+    player.Character.Humanoid.Health = math.huge
+end)
+
+Section2:NewToggle("No Clip","Xuyên tường", function(state)
+    if state then
+        _G.NoClip = true
+        game:GetService("RunService").Stepped:Connect(function()
+            if _G.NoClip then
+                for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+        print("No Clip ON")
+    else
+        _G.NoClip = false
+        print("No Clip OFF")
+    end
+end)
+
+Section2:NewButton("Auto Haki","Tự động bật Haki", function()
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ActivateBuso")
+end)
+
+-- Aimbot
+Section2:NewToggle("Aimbot","Tự động ngắm mục tiêu", function(state)
+    if state then
+        _G.Aimbot = true
+        print("Aimbot ON")
+        
+        local function getNearestEnemy()
+            local closest = nil
+            local distance = math.huge
+            local playerPos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+            
+            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                    local enemyPos = v.HumanoidRootPart.Position
+                    local currentDistance = (playerPos - enemyPos).magnitude
+                    
+                    if currentDistance < distance then
+                        distance = currentDistance
+                        closest = v
+                    end
+                end
+            end
+            
+            return closest
+        end
+        
+        while _G.Aimbot do
+            wait()
+            local nearestEnemy = getNearestEnemy()
+            if nearestEnemy then
+                local camera = workspace.CurrentCamera
+                camera.CFrame = CFrame.new(camera.CFrame.Position, nearestEnemy.HumanoidRootPart.Position)
+            end
+        end
+    else
+        _G.Aimbot = false
+        print("Aimbot OFF")
+    end
+end)
+
+print("Anura hub for Blox Fruits U26 Đã tải xong - Chúc bạn chơi game vui vẻ!")
