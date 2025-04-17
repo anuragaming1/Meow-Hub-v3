@@ -432,136 +432,133 @@ end)
 
 print("[Anura Hub] Part4 loaded: Movement & Health support active.")
 
--- Part5: Anura Hub - UI HUD "TỰ HÀO VIỆT NAM 30/4"
-local plr = game.Players.LocalPlayer
-local StarterGui = game:GetService("StarterGui")
+-- Anura Hub New UI Part 5 - Giao diện Auto Bounty mượt & đẹp
 
--- Tạo ScreenGui
-local screen = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-screen.Name = "AnuraBountyUI"
-screen.ResetOnSpawn = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local plr = Players.LocalPlayer
+local startTime = tick()
 
--- Tạo khung chính
-local main = Instance.new("Frame", screen)
-main.Size = UDim2.new(0, 330, 0, 210)
-main.Position = UDim2.new(0, 20, 0.4, 0)
-main.BackgroundTransparency = 0
+-- Giao diện chính
+local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
+gui.Name = "AnuraAutoBountyUI"
+gui.ResetOnSpawn = false
+
+-- Frame chính
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 350, 0, 250)
+main.Position = UDim2.new(0, 20, 0.35, 0)
 main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 
--- Viền 7 màu nhấp nháy
+-- Viền 7 màu
 local stroke = Instance.new("UIStroke", main)
 stroke.Thickness = 2
 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 stroke.Color = Color3.fromRGB(255, 0, 0)
-
--- Đổi màu viền 7 màu liên tục
 task.spawn(function()
-    local rainbow = {
-        Color3.fromRGB(255, 0, 0),
-        Color3.fromRGB(255, 128, 0),
-        Color3.fromRGB(255, 255, 0),
-        Color3.fromRGB(0, 255, 0),
-        Color3.fromRGB(0, 255, 255),
-        Color3.fromRGB(0, 128, 255),
-        Color3.fromRGB(128, 0, 255),
-        Color3.fromRGB(255, 0, 255)
-    }
-    local i = 1
-    while true do
-        stroke.Color = rainbow[i]
-        i = (i % #rainbow) + 1
-        wait(0.2)
-    end
+	local colors = {
+		Color3.fromRGB(255, 0, 0),
+		Color3.fromRGB(255, 128, 0),
+		Color3.fromRGB(255, 255, 0),
+		Color3.fromRGB(0, 255, 0),
+		Color3.fromRGB(0, 255, 255),
+		Color3.fromRGB(0, 128, 255),
+		Color3.fromRGB(128, 0, 255),
+		Color3.fromRGB(255, 0, 255)
+	}
+	local i = 1
+	while true do
+		stroke.Color = colors[i]
+		i = (i % #colors) + 1
+		wait(0.2)
+	end
 end)
 
--- Ảnh nền
+-- Hình nền
 local bg = Instance.new("ImageLabel", main)
 bg.Size = UDim2.new(1, 0, 1, 0)
 bg.Position = UDim2.new(0, 0, 0, 0)
-bg.BackgroundTransparency = 1
 bg.Image = "rbxassetid://131220073739500"
+bg.BackgroundTransparency = 1
 bg.ImageTransparency = 0.6
 
--- Text Label Helper
-local function createLabel(name, y, text)
-    local lbl = Instance.new("TextLabel", main)
-    lbl.Name = name
-    lbl.Size = UDim2.new(1, -10, 0, 20)
-    lbl.Position = UDim2.new(0, 5, 0, y)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 14
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Text = text
-    return lbl
+-- Label helper
+local function newLabel(text, y)
+	local lbl = Instance.new("TextLabel", main)
+	lbl.Size = UDim2.new(1, -20, 0, 22)
+	lbl.Position = UDim2.new(0, 10, 0, y)
+	lbl.BackgroundTransparency = 1
+	lbl.Font = Enum.Font.GothamBold
+	lbl.TextSize = 14
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextColor3 = Color3.new(1, 1, 1)
+	lbl.Text = text
+	return lbl
 end
 
-local title = createLabel("Title", 5, "ANURA HUB - TỰ HÀO VIỆT NAM 30/4")
+local title = newLabel("Anura Hub - Auto Bounty", 10)
 title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(255, 215, 0)
 
-local lblTarget = createLabel("Target", 30, "Đang săn: Chưa có")
-local lblBounty = createLabel("Bounty", 55, "Bounty đã kill: 0")
-local lblServer = createLabel("Server", 80, "Số người trong server: 0")
-local lblTime = createLabel("Time", 105, "Thời gian dùng: 0 phút")
-local lblFPS = createLabel("FPS", 130, "FPS: 0")
+local targetLbl = newLabel("Target: Không", 40)
+local bountyLbl = newLabel("Bounty: 0", 65)
+local serverLbl = newLabel("Người trong server: 0", 90)
+local timeLbl = newLabel("Thời gian: 0h 0m 0s", 115)
+local fpsLbl = newLabel("FPS: 0", 140)
 
 -- Nút Next Player
 local nextBtn = Instance.new("TextButton", main)
-nextBtn.Size = UDim2.new(0, 140, 0, 25)
-nextBtn.Position = UDim2.new(0, 5, 1, -30)
+nextBtn.Size = UDim2.new(0, 160, 0, 30)
+nextBtn.Position = UDim2.new(0, 10, 1, -40)
 nextBtn.Text = "Next Player"
 nextBtn.Font = Enum.Font.GothamBold
-nextBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-nextBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+nextBtn.TextColor3 = Color3.new(1, 1, 1)
+nextBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 nextBtn.TextSize = 14
-nextBtn.AutoButtonColor = true
 nextBtn.MouseButton1Click:Connect(function()
-    _G.ForceNextTarget = true
+	_G.ForceNextTarget = true
 end)
 
--- Nút ẩn/hiện UI
-local toggleBtn = Instance.new("TextButton", screen)
-toggleBtn.Size = UDim2.new(0, 30, 0, 30)
-toggleBtn.Position = UDim2.new(0, 0, 0, 180)
-toggleBtn.Text = "-"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.TextSize = 20
-toggleBtn.MouseButton1Click:Connect(function()
-    main.Visible = not main.Visible
+-- Nút Toggle UI
+local toggle = Instance.new("TextButton", gui)
+toggle.Size = UDim2.new(0, 35, 0, 35)
+toggle.Position = UDim2.new(0, 0, 0.35, 0)
+toggle.Text = "-"
+toggle.TextSize = 24
+toggle.Font = Enum.Font.GothamBold
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggle.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
 end)
 
--- Cập nhật HUD mỗi giây
-local startTime = tick()
-local RunService = game:GetService("RunService")
-
+-- Cập nhật UI
 RunService.RenderStepped:Connect(function()
-    -- Cập nhật thời gian
-    local mins = math.floor((tick() - startTime) / 60)
-    lblTime.Text = "Thời gian dùng: " .. tostring(mins) .. " phút"
+	local timeUsed = tick() - startTime
+	local h = math.floor(timeUsed / 3600)
+	local m = math.floor((timeUsed % 3600) / 60)
+	local s = math.floor(timeUsed % 60)
 
-    -- Cập nhật FPS
-    local fps = math.floor(1 / RunService.RenderStepped:Wait())
-    lblFPS.Text = "FPS: " .. tostring(fps)
+	local fps = math.floor(1 / RunService.RenderStepped:Wait())
 
-    -- Cập nhật Target
-    local t = _G.AutoBountyTarget and _G.AutoBountyTarget:FindFirstChild("HumanoidRootPart") and _G.AutoBountyTarget.Parent
-    if t and t:IsA("Model") then
-        lblTarget.Text = "Đang săn: " .. t.Name
-    else
-        lblTarget.Text = "Đang săn: Không"
-    end
+	timeLbl.Text = string.format("Thời gian: %dh %dm %ds", h, m, s)
+	fpsLbl.Text = "FPS: " .. tostring(fps)
+	serverLbl.Text = "Người trong server: " .. tostring(#Players:GetPlayers())
 
-    -- Cập nhật số người
-    lblServer.Text = "Số người trong server: " .. tostring(#game.Players:GetPlayers())
+	local t = _G.AutoBountyTarget and _G.AutoBountyTarget:FindFirstChild("HumanoidRootPart") and _G.AutoBountyTarget.Parent
+	if t and t:IsA("Model") then
+		targetLbl.Text = "Target: " .. t.Name
+	else
+		targetLbl.Text = "Target: Không"
+	end
+
+	bountyLbl.Text = "Bounty: " .. tostring(plr.leaderstats and plr.leaderstats.Bounty and plr.leaderstats.Bounty.Value or 0)
 end)
 
-print("[Anura Hub] Part5 loaded: UI & HUD Việt Nam 30/4 đã hiển thị.")
+print("[Anura Hub] UI part 5 loaded – Viền 7 màu, hình nền, thông tin đầy đủ")
 
 -- Part6: Anti Lag, Anti Ban, Anti Death, Fix Stuck by Anura Hub
 
