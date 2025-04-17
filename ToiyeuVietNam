@@ -499,7 +499,7 @@ local function newLabel(text, y)
 	return lbl
 end
 
-local title = newLabel("Anura Hub - Auto Bounty", 10)
+local title = newLabel("TỰ HÀO VIỆT NAM🇻🇳 30/04/1975 ", 10)
 title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(255, 215, 0)
 
