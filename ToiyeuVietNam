@@ -895,3 +895,82 @@ optimizeLighting()
 destroyByName()
 
 print("[Anura Hub] Part7 loaded: FPS Boost mạnh đã kích hoạt.")
+-- Part8: Silent Aim + Aimbot Visual v2 by Anura Hub
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local plr = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local mouse = plr:GetMouse()
+
+getgenv().SilentAimRange = 100
+getgenv().SilentAimHitPart = "HumanoidRootPart"
+
+local fovCircle = Drawing.new("Circle")
+fovCircle.Visible = true
+fovCircle.Radius = getgenv().SilentAimRange
+fovCircle.Thickness = 1.5
+fovCircle.Color = Color3.fromRGB(255, 0, 0)
+fovCircle.Transparency = 0.6
+fovCircle.Filled = false
+fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+local redDot = Drawing.new("Circle")
+redDot.Visible = false
+redDot.Radius = 4
+redDot.Color = Color3.fromRGB(255, 0, 0)
+redDot.Thickness = 1.5
+redDot.Filled = true
+
+-- Tìm player gần nhất trong FOV
+function GetClosestTarget()
+    local closest, shortest = nil, getgenv().SilentAimRange
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= plr and p.Character and p.Character:FindFirstChild(getgenv().SilentAimHitPart) and p.Character:FindFirstChild("Humanoid") then
+            if p.Character.Humanoid.Health > 0 and not p.PlayerGui.Main.PvpDisabled.Visible then
+                local pos, onScreen = Camera:WorldToViewportPoint(p.Character[getgenv().SilentAimHitPart].Position)
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+                if onScreen and dist < shortest then
+                    shortest = dist
+                    closest = p
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- Cập nhật FOV vòng tròn + Dot tâm
+RunService.RenderStepped:Connect(function()
+    fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    local target = GetClosestTarget()
+    if target and target.Character and target.Character:FindFirstChild(getgenv().SilentAimHitPart) then
+        local pos, onScreen = Camera:WorldToViewportPoint(target.Character[getgenv().SilentAimHitPart].Position)
+        if onScreen then
+            redDot.Visible = true
+            redDot.Position = Vector2.new(pos.X, pos.Y)
+        else
+            redDot.Visible = false
+        end
+    else
+        redDot.Visible = false
+    end
+end)
+
+-- Hook Silent Aim (mouse.Hit & mouse.Target)
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local oldIndex = mt.__index
+
+mt.__index = newcclosure(function(t, k)
+    if tostring(t) == "Mouse" and (k == "Hit" or k == "Target") then
+        local target = GetClosestTarget()
+        if target and target.Character and target.Character:FindFirstChild(getgenv().SilentAimHitPart) then
+            return target.Character[getgenv().SilentAimHitPart].CFrame
+        end
+    end
+    return oldIndex(t, k)
+end)
+
+print("[Anura Hub] Part8 loaded – Silent Aim + Red Dot Aimbot ready")
